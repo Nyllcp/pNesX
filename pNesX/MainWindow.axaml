@@ -10,7 +10,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Menu -->
             <RowDefinition Height="*"/>   <!-- NES-display -->
-            <RowDefinition Height="Auto"/> <!-- Statusfält -->
+            <RowDefinition Height="Auto"/> <!-- Statusfï¿½lt -->
         </Grid.RowDefinitions>
 
         <!-- Meny -->
@@ -26,7 +26,7 @@
         <local:NesBitmapControl x:Name="NesView" Grid.Row="1"></local:NesBitmapControl>
                       
 
-        <!-- Statusfält-->
+        <!-- Statusfï¿½lt-->
         <Border Grid.Row="2" Background="#EEE" BorderBrush="#AAA" BorderThickness="1" Padding="6,2">
             <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
                 <TextBlock x:Name="RomNameText" Text="No Rom Loaded" VerticalAlignment="Center" Foreground="Black"/>

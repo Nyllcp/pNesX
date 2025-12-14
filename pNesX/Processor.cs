@@ -252,7 +252,7 @@ namespace pNesX
         /// <summary>
         /// Performs the next step on the processor
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void NextStep()
         {
             if (CycleCountStep-- > 0) return;
@@ -310,9 +310,9 @@ namespace pNesX
         /// <returns>the byte being returned</returns>
         public virtual byte ReadMemoryValue(int address)
         {
-            var value = _core.ReadMemory(address);
+            //var value = _core.ReadMemory(address);
             IncrementCycleCount();
-            return value;
+            return _core.ReadMemory(address);
         }
 
         /// <summary>
@@ -322,8 +322,8 @@ namespace pNesX
         /// <returns></returns>
         public virtual byte ReadMemoryValueWithoutCycle(int address)
         {
-            var value = _core.ReadMemory(address); 
-            return value;
+            //var value = _core.ReadMemory(address); 
+            return _core.ReadMemory(address);;
         }
 
         /// <summary>

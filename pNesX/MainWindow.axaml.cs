@@ -8,6 +8,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Input;
 
 namespace pNesX
 {
@@ -38,17 +39,29 @@ namespace pNesX
 
             Opened += OnOpened;
             Closing += OnClosing;
+            InputElement.KeyDownEvent.AddClassHandler<TopLevel>(OnKeyDown);
+            InputElement.KeyUpEvent.AddClassHandler<TopLevel>(OnKeyUp);
 
 
         }
 
+        private void OnKeyDown(object? sender, KeyEventArgs e)
+        {
+            if(_nes != null) _io.AvaloniaKeyDown(ref _nes, e);
+            e.Handled = true;
+        }
+        private void OnKeyUp(object? sender, KeyEventArgs e)
+        {
+            if(_nes != null) _io.AvaloniaKeyUp(ref _nes, e);
+            e.Handled = true;
+        }
         private void OnOpened(object? sender, EventArgs e)
         {
 
 
             _audio = new Audio();
             _io = new IO();
-
+            
 
 
             RomNameText.Text = "No Rom Loaded";
@@ -104,6 +117,7 @@ namespace pNesX
                 {
                     Title = "Open NES ROM",
                     AllowMultiple = false,
+                    
                     FileTypeFilter = new[]
                     {
                 new FilePickerFileType("NES ROMs")
@@ -118,7 +132,7 @@ namespace pNesX
 
             var file = files[0];
 
-            // Full sökväg till filen
+            // Full sï¿½kvï¿½g till filen
             var path = file.Path.LocalPath;
 
             _rom = new Rom();
@@ -223,20 +237,20 @@ namespace pNesX
             {
                 if (_io.FrameLimit)
                 {
-                    while (_audio._audioStream.Count > (735 * 2))
+                    while (_audio._audioStream.Count > 735)
                     {
                         // spin
                     }
                 }
 
-                _io.Input(ref _nes);
+                //_io.Input(ref _nes);
                 _nes.RunOneFrame();
-
+                
                 _audio._audioStream.AddSample(
                     _nes.Samples,
                     _nes.NoOfSamples
                 );
-
+                
                 lock (_frameLock)
                 {
                     _frameBuffer = _nes.Frame;

@@ -51,8 +51,8 @@ namespace pNesX
 
         protected override bool OnGetData(out short[] samples)
         {
-            samples = new short[_samplesPerFrame];
-            GetSamples(_samplesPerFrame, ref samples);
+            samples = new short[_samplesPerFrame / 2];
+            GetSamples(_samplesPerFrame / 2, ref samples);
             return true;
 
         }

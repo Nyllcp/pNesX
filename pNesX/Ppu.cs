@@ -77,7 +77,7 @@ namespace pNesX
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Tick()
         {
 
