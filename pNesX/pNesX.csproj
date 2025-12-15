@@ -24,4 +24,10 @@
     </PackageReference>
     <PackageReference Include="PortAudioSharp2" Version="1.0.6" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="pNesX_title.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

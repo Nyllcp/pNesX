@@ -5,6 +5,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using System;
 using System.Collections;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace pNesX
@@ -29,7 +30,14 @@ namespace pNesX
                     Avalonia.Platform.PixelFormat.Bgra8888,
                     Avalonia.Platform.AlphaFormat.Premul
                 );
+                
             };
+        }
+
+        public void SetBitmapFromStream(Stream stream)
+        {
+            _bitmap = WriteableBitmap.Decode(stream);
+            InvalidateVisual();
         }
         
         public void UpdateFrame(uint[] frame)
@@ -38,14 +46,6 @@ namespace pNesX
                 throw new ArgumentException("Frame size mismatch");
 
             _frame = frame;
-            InvalidateVisual(); 
-            redrawFrames++;
-        }
-
-        public override void Render(DrawingContext context)
-        {
-            base.Render(context);
-
             if (_bitmap == null || _frame == null)
                 return;
 
@@ -55,6 +55,17 @@ namespace pNesX
             {
                 Marshal.Copy(result, 0, fb.Address, result.Length);
             }
+            InvalidateVisual(); 
+            redrawFrames++;
+        }
+
+        public override void Render(DrawingContext context)
+        {
+            base.Render(context);
+
+            if (_bitmap == null)
+                return;
+            
             var widthRatio = Bounds.Width / Width;
             var heightRatio = Bounds.Height / Height;
             var rat1 = 16f;

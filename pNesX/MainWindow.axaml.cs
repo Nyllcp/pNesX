@@ -9,6 +9,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Input;
+using Avalonia.Media.Imaging;
 
 namespace pNesX
 {
@@ -17,15 +18,15 @@ namespace pNesX
 
         private PortAudioX _audio;
         private IO _io;
-        private Core _nes;
-        private Rom _rom;
+        private Core? _nes;
+        private Rom? _rom;
 
 
         private const int NesWidth = 256;
         private const int NesHeight = 240;
 
-        private Thread _emulationThread;
-        private Thread _renderThread;
+        private Thread? _emulationThread;
+        private Thread? _renderThread;
         private volatile bool _run;
 
         private readonly object _frameLock = new();
@@ -36,13 +37,14 @@ namespace pNesX
         public MainWindow()
         {
             InitializeComponent();
-
+            _audio = new PortAudioX();
+            _io = new IO();
             Opened += OnOpened;
             Closing += OnClosing;
             InputElement.KeyDownEvent.AddClassHandler<TopLevel>(OnKeyDown);
             InputElement.KeyUpEvent.AddClassHandler<TopLevel>(OnKeyUp);
-
-
+            
+            
         }
 
         private void OnKeyDown(object? sender, KeyEventArgs e)
@@ -58,26 +60,16 @@ namespace pNesX
         private void OnOpened(object? sender, EventArgs e)
         {
 
-
-            _audio = new PortAudioX();
             _audio.Initialize();
-            _io = new IO();
-            
-
-
             RomNameText.Text = "No Rom Loaded";
             StateText.Text = "Selected State : null";
             FpsText.Text = "Emulator FPS:";
             FpsRedrawText.Text = "Blit FPS:";
-
-            uint[] _frame = new uint[NesWidth * NesHeight];
-            for (int i = 0; i < _frame.Length; i++)
+            
+            using (var stream = File.OpenRead("pNesX_title.bmp"))
             {
-              
-                _frame[i] = 0xFFFF0000;
+                    NesView.SetBitmapFromStream(stream);
             }
-            NesView.UpdateFrame(_frame);
-
 
         }
 
