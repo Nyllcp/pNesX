@@ -15,7 +15,7 @@ namespace pNesX
     public partial class MainWindow : Window
     {
 
-        private Audio _audio;
+        private PortAudioX _audio;
         private IO _io;
         private Core _nes;
         private Rom _rom;
@@ -59,7 +59,8 @@ namespace pNesX
         {
 
 
-            _audio = new Audio();
+            _audio = new PortAudioX();
+            _audio.Initialize();
             _io = new IO();
             
 
@@ -232,12 +233,12 @@ namespace pNesX
         private void EmulationThread()
         {
             int frames = 0;
-            int lastTime = _io.ElapsedTimeMS();
+            long lastTime = _io.ElapsedTimeMS();
             while (_run)
             {
                 if (_io.FrameLimit)
                 {
-                    while (_audio._audioStream.Count > 735)
+                    while (_audio.Count > 1000)
                     {
                         // spin
                     }
@@ -246,7 +247,7 @@ namespace pNesX
                 //_io.Input(ref _nes);
                 _nes.RunOneFrame();
                 
-                _audio._audioStream.AddSample(
+                _audio.AddSample(
                     _nes.Samples,
                     _nes.NoOfSamples
                 );
@@ -277,7 +278,7 @@ namespace pNesX
         {
             uint[] frame;
             long renderLimiter = _io.ElapsedTimeMicro();
-            int lastTime = _io.ElapsedTimeMS();
+            long lastTime = _io.ElapsedTimeMS();
             while (_run)
             {
 

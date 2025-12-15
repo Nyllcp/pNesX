@@ -21,7 +21,6 @@ namespace pNesX
 
         public NesBitmapControl()
         {
-            // Skapa bitmap när kontrollen laddas
             this.AttachedToVisualTree += (s, e) =>
             {
                 _bitmap = new WriteableBitmap(
@@ -32,15 +31,14 @@ namespace pNesX
                 );
             };
         }
-
-        // Uppdatera framebuffer från NES-core
+        
         public void UpdateFrame(uint[] frame)
         {
             if (frame.Length != Width * Height)
                 throw new ArgumentException("Frame size mismatch");
 
             _frame = frame;
-            InvalidateVisual(); // trigga repaint
+            InvalidateVisual(); 
             redrawFrames++;
         }
 
@@ -55,11 +53,8 @@ namespace pNesX
             Buffer.BlockCopy(_frame, 0, result, 0, result.Length);
             using (var fb = _bitmap.Lock())
             {
-                // Kopiera _frame till bitmap (BGRA)
                 Marshal.Copy(result, 0, fb.Address, result.Length);
             }
-
-            // Rita bitmap i kontrollen
             var widthRatio = Bounds.Width / Width;
             var heightRatio = Bounds.Height / Height;
             var rat1 = 16f;
