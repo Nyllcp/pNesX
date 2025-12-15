@@ -32,9 +32,24 @@ namespace pNesX
             streamParameters.device = device;
             streamParameters.sampleFormat = SampleFormat.Int16;
             _stream = new Stream(null,streamParameters,44100,256,StreamFlags.NoFlag,_callbackDelegate,IntPtr.Zero);
-            _stream.Start();
         }
-        
+
+        public void Start()
+        {
+            if (_stream.IsStopped)
+            {
+                _stream.Start();
+            }
+        }
+
+        public void Stop()
+        {
+            if (_stream.IsActive)
+            {
+                _stream.Stop();
+            }
+        }
+
         private StreamCallbackResult AudioCallback(
             IntPtr input,
             IntPtr output,

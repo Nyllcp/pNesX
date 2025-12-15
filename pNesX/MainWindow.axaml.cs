@@ -66,8 +66,9 @@ namespace pNesX
 
 
             RomNameText.Text = "No Rom Loaded";
-            StateText.Text = "Selected State : 0";
+            StateText.Text = "Selected State : null";
             FpsText.Text = "Emulator FPS:";
+            FpsRedrawText.Text = "Blit FPS:";
 
             uint[] _frame = new uint[NesWidth * NesHeight];
             for (int i = 0; i < _frame.Length; i++)
@@ -91,24 +92,8 @@ namespace pNesX
 
         private async void Open_Click(object? sender, RoutedEventArgs e)
         {
-            StopEmulation();
-
-            //var dialog = new OpenFileDialog
-            //{
-            //    Filters =
-            //    {
-            //        new FileDialogFilter
-            //        {
-            //            Name = "NES ROMs",
-            //            Extensions = { "nes", "zip" }
-            //        }
-            //    }
-            //};
-
-            //var result = await dialog.ShowAsync(this);
-            //if (result == null || result.Length == 0)
-            //    return;
-
+            
+            
             var topLevel = TopLevel.GetTopLevel(this);
             if (topLevel == null)
                 return;
@@ -118,22 +103,22 @@ namespace pNesX
                 {
                     Title = "Open NES ROM",
                     AllowMultiple = false,
-                    
                     FileTypeFilter = new[]
                     {
-                new FilePickerFileType("NES ROMs")
-                {
-                    Patterns = new[] { "*.nes", "*.zip" }
-                }
+                    new FilePickerFileType("NES ROMs")
+                    {
+                        Patterns = new[] { "*.nes", "*.zip" }
                     }
+                }
                 });
 
             if (files.Count == 0)
                 return;
-
+            
+            StopEmulation();
+            
             var file = files[0];
-
-            // Full s�kv�g till filen
+            
             var path = file.Path.LocalPath;
 
             _rom = new Rom();
@@ -149,7 +134,7 @@ namespace pNesX
             {
                 var name = Path.GetFileNameWithoutExtension(path);
                 RomNameText.Text = $"{name} Mapper {_rom.mapperNumber}";
-                RunEmulation();
+                StartEmulation();
             }
             else
             {
@@ -168,31 +153,26 @@ namespace pNesX
             _nes = new Core();
 
             if (_nes.LoadRom(_rom))
-                RunEmulation();
+                StartEmulation();
         }
 
         private void Exit_Click(object? sender, RoutedEventArgs e)
         {
             Close();
         }
-
-
-
-        private void RunEmulation()
-        {
-            _run = true;
-            StartEmulation();
-            FileMenu.Focusable = !_run;
-            ResetMenu.Focusable = !_run;
-        }
-
+        
         private void StartEmulation()
         {
+            _run = true;
+            
+            FileMenu.Focusable = !_run;
+            ResetMenu.Focusable = !_run;
+            
             if (_emulationThread != null && _emulationThread.IsAlive)
                 return;
             if (_renderThread != null && _renderThread.IsAlive)
                 return;
-
+            _audio.Start();
             _emulationThread = new Thread(EmulationThread)
             {
                 IsBackground = true,
@@ -216,7 +196,9 @@ namespace pNesX
         private void StopEmulation()
         {
             _run = false;
-
+            FileMenu.Focusable = !_run;
+            ResetMenu.Focusable = !_run;
+            _audio.Stop();
             if (_emulationThread != null &&
                 _emulationThread.IsAlive)
             {
@@ -313,7 +295,7 @@ namespace pNesX
 
                     Dispatcher.UIThread.Post(() =>
                     {
-                        FpsRedrawText.Text = $"Redraw FPS: {redrawFps}";
+                        FpsRedrawText.Text = $"Blit FPS: {redrawFps}";
 
                     });
                 }
