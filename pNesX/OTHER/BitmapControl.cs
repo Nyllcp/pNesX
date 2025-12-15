@@ -2,9 +2,7 @@
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using Avalonia.Platform;
 using System;
-using System.Collections;
 using System.IO;
 using System.Runtime.InteropServices;
 

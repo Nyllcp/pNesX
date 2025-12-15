@@ -1,15 +1,11 @@
-using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
-using pNesX;
 using System;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using Avalonia.Input;
-using Avalonia.Media.Imaging;
 
 namespace pNesX
 {
@@ -31,6 +27,8 @@ namespace pNesX
 
         private readonly object _frameLock = new();
         private uint[] _frameBuffer = new uint[NesWidth * NesHeight];
+        
+        private IStorageFolder? _lastFolder;
 
 
 
@@ -95,6 +93,7 @@ namespace pNesX
                 {
                     Title = "Open NES ROM",
                     AllowMultiple = false,
+                    SuggestedStartLocation = _lastFolder,
                     FileTypeFilter = new[]
                     {
                     new FilePickerFileType("NES ROMs")
@@ -106,13 +105,14 @@ namespace pNesX
 
             if (files.Count == 0)
                 return;
+            _lastFolder = await files[0].GetParentAsync();
             
             StopEmulation();
             
             var file = files[0];
             
             var path = file.Path.LocalPath;
-
+       
             _rom = new Rom();
             _nes = new Core();
 
@@ -156,10 +156,6 @@ namespace pNesX
         private void StartEmulation()
         {
             _run = true;
-            
-            FileMenu.Focusable = !_run;
-            ResetMenu.Focusable = !_run;
-            
             if (_emulationThread != null && _emulationThread.IsAlive)
                 return;
             if (_renderThread != null && _renderThread.IsAlive)
@@ -188,8 +184,6 @@ namespace pNesX
         private void StopEmulation()
         {
             _run = false;
-            FileMenu.Focusable = !_run;
-            ResetMenu.Focusable = !_run;
             _audio.Stop();
             if (_emulationThread != null &&
                 _emulationThread.IsAlive)
@@ -217,8 +211,7 @@ namespace pNesX
                         // spin
                     }
                 }
-
-                //_io.Input(ref _nes);
+                
                 _nes.RunOneFrame();
                 
                 _audio.AddSample(
