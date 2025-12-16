@@ -7,31 +7,47 @@ namespace pNesX
     {
         private Stream _stream;
         private RingBuffer _ringBuffer;
-        
-        
-        private static readonly int _samplesPerFrame = 735;
+        private uint _samplesPerFrame = 735;
+
         private Stream.Callback _callbackDelegate;
         public PortAudioX()
         {
-            
+#if Linux
+        _samplesPerFrame = 256;
+#elif Windows
+         //Higher latency on windows, need more samples per frame. 1200 seems to be enough to not slow down emulation
+         _samplesPerFrame = 1200; 
+#endif
             _ringBuffer = new RingBuffer(4096);
             _callbackDelegate = new Stream.Callback(AudioCallback);
+            
 
         }
         
+        ~PortAudioX()
+        {
+          
+            TerminateStream();
+        }
         public void AddSample(short[] samples, int amount) { _ringBuffer.AddSample(samples, amount); }
         public int Count => _ringBuffer.Count;
+        public uint SamplesPerFrame => _samplesPerFrame;
         
         public void Initialize()
         {
             PortAudio.Initialize();
+            
             var streamParameters = new StreamParameters();
             var device = PortAudio.DefaultOutputDevice;
+            PortAudioSharp.DeviceInfo data = PortAudio.GetDeviceInfo(device);
             streamParameters.channelCount = 1;
             streamParameters.device = device;
             streamParameters.sampleFormat = SampleFormat.Int16;
-            _stream = new Stream(null,streamParameters,44100,256,StreamFlags.NoFlag,_callbackDelegate,IntPtr.Zero);
+            PortAudioSharp.DeviceInfo deviceInfo = PortAudio.GetDeviceInfo(device);
+            _stream = new Stream(null,streamParameters,44100, _samplesPerFrame, StreamFlags.NoFlag,_callbackDelegate,IntPtr.Zero);
         }
+
+
 
         public void Start()
         {
@@ -41,12 +57,27 @@ namespace pNesX
             }
         }
 
+
         public void Stop()
         {
             if (_stream.IsActive)
             {
                 _stream.Stop();
             }
+        }
+
+        public void TerminateStream()
+        {
+            if(_stream != null)
+            {
+                if (_stream.IsActive)
+                {
+                    _stream.Stop();
+                }
+                _stream.Dispose();
+            }
+          
+            PortAudio.Terminate();
         }
 
         private StreamCallbackResult AudioCallback(
@@ -117,25 +148,16 @@ namespace pNesX
             
             public void GetSamplesPointer(int count, IntPtr buffer)
             {
-                if (count > _count)
-                {
-                    unsafe
-                    {
-                        short* ptr = (short*)buffer;
-                        for (int i = 0; i < count; i++)
-                        {
-                            *ptr = 0;
-                            ptr++;
-                        }
-                    }
-                    return;
-                }
+            if (_count == 0) return;
+            int amount = count > _count ? _count : count;
                 lock (obj)
                 {
+
                     unsafe
                     {
+                    
                         short* ptr = (short*)buffer;
-                        for (int i = 0; i < count; i++)
+                        for (int i = 0; i < amount; i++)
                         {
                             *ptr= _ringBuffer[tail];
                             ptr++;

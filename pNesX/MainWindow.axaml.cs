@@ -73,8 +73,9 @@ namespace pNesX
 
         private void OnClosing(object? sender, WindowClosingEventArgs e)
         {
+           
             StopEmulation();
-
+            _audio.TerminateStream();
             if (_rom != null)
                 _rom.SavePRGRam();
         }
@@ -156,11 +157,12 @@ namespace pNesX
         private void StartEmulation()
         {
             _run = true;
+            _audio.Start();
             if (_emulationThread != null && _emulationThread.IsAlive)
                 return;
             if (_renderThread != null && _renderThread.IsAlive)
                 return;
-            _audio.Start();
+
             _emulationThread = new Thread(EmulationThread)
             {
                 IsBackground = true,
@@ -195,6 +197,7 @@ namespace pNesX
             {
                 _renderThread.Join();
             }
+   
         }
 
 
@@ -202,13 +205,15 @@ namespace pNesX
         {
             int frames = 0;
             long lastTime = _io.ElapsedTimeMS();
+            long spinTime = lastTime;
             while (_run)
             {
                 if (_io.FrameLimit)
                 {
-                    while (_audio.Count > 1000)
+                    while (_audio.Count > _audio.SamplesPerFrame + 100 && _run)
                     {
                         // spin
+
                     }
                 }
                 
