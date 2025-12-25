@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace pNesX
 {
@@ -36,7 +37,23 @@ namespace pNesX
         public byte Pad1 { get { return pad1; } set { pad1 = value; } }
         public Int16[] Samples { get { return _apu.Samples; } }
         public int NoOfSamples { get { int value = _apu.NumberOfSamples; _apu.NumberOfSamples = 0; return value; } }
+
+        public bool DisableSpriteFlicker
+        {
+            get { return _ppu.DisableFlicker; }
+            set { _ppu.DisableFlicker = value; }
+        }
         
+        public bool HideOverscan
+        {
+            get { return _ppu.HideOverscan; }
+            set { _ppu.HideOverscan = value; }
+        }
+
+
+
+
+
 
         public Core()
         {
@@ -188,8 +205,14 @@ namespace pNesX
             _cpu.WriteSaveState(ref state);
             _apu.WriteSaveState(ref state);
             _cart.WriteSaveState(ref state);
-
-            string stateFileName = System.IO.Path.ChangeExtension(fileName, "s" + selectedState.ToString());
+ 
+            var file = Path.GetFileName(fileName);
+            var path = Path.GetDirectoryName(fileName);
+            path += "/Savestates/";
+            System.IO.Directory.CreateDirectory(path);
+            path += file;
+            
+            string stateFileName = System.IO.Path.ChangeExtension(path, "s" + selectedState.ToString());
            
             using (System.IO.Stream stream = System.IO.File.Open(stateFileName, System.IO.FileMode.Create))
             {
@@ -203,9 +226,13 @@ namespace pNesX
         {
             selectedState = selectedState > 9 ? 9 : selectedState;
             Savestate state;
-            string stateFileName = System.IO.Path.ChangeExtension(fileName, "s" + selectedState.ToString());
+            var file = Path.GetFileName(fileName);
+            var path = Path.GetDirectoryName(fileName);
+            path += "/Savestates/";
+            path += file;
+            string stateFileName = System.IO.Path.ChangeExtension(path, "s" + selectedState.ToString());
             if (!System.IO.File.Exists(stateFileName)) return;
-
+            
             using (System.IO.Stream stream = System.IO.File.Open(stateFileName, System.IO.FileMode.Open))
             {
                 var formatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();

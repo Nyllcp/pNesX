@@ -24,7 +24,12 @@ namespace pNesX
         {
             _ppu = ppu;
         }
-
+        
+        
+        public SpriteObject ShallowCopy()
+        {
+            return (SpriteObject)MemberwiseClone();
+        }
 
 
         public void ClearSprite()

@@ -114,7 +114,12 @@ namespace pNesX
             reader.Close();
             if(batteryRam)
             {
-                saveName = Path.ChangeExtension(fileName, ".sav"); 
+                var file = Path.GetFileName(fileName);
+                var path = Path.GetDirectoryName(fileName);
+                path += "/Savestates/";
+                System.IO.Directory.CreateDirectory(path);
+                path += file;
+                saveName = Path.ChangeExtension(path, ".sav"); 
                 if(File.Exists(saveName))
                 {
                     reader = new BinaryReader(File.Open(saveName , FileMode.Open));
@@ -138,6 +143,7 @@ namespace pNesX
         {
             if(batteryRam)
             {
+                
                 using (BinaryWriter writer = new BinaryWriter(File.Open(saveName, FileMode.OpenOrCreate)))
                 {
                     writer.Write(prgRam, 0, prgRam.Length);

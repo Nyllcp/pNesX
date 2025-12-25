@@ -13,7 +13,7 @@ namespace pNesX
         public PortAudioX()
         {
 #if Linux
-        _samplesPerFrame = 256;
+        _samplesPerFrame = 512;
 #elif Windows
          //Higher latency on windows, need more samples per frame. 1200 seems to be enough to not slow down emulation
          _samplesPerFrame = 1200; 

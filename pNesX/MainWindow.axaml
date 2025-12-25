@@ -20,10 +20,20 @@
                 <MenuItem Header="Exit" Click="Exit_Click"/>
             </MenuItem>
             <MenuItem x:Name="ResetMenu" Header="Reset" Click="Reset_Click"/>
+            <MenuItem x:Name="OptionsMenu" Header="Options">
+                <MenuItem x:Name="Interpolation" Header="Interpolation">
+                    <MenuItem x:Name="InterpolationNone" ToggleType="CheckBox" IsChecked="True" Header="None" Tag="None" Click="Interpolation_OnClick"/>
+                    <MenuItem x:Name="InterpolationLow" ToggleType="CheckBox" IsChecked="False" Header="Low Quality" Tag="Low" Click="Interpolation_OnClick"/>
+                    <MenuItem x:Name="InterpolationHigh" ToggleType="CheckBox" IsChecked="False" Header="High Quality" Tag="High" Click="Interpolation_OnClick"/>
+                </MenuItem>
+                <MenuItem x:Name="HideOverscan" ToggleType="CheckBox" Header="Hide Overscan" IsChecked="True" Click="HideOverscan_OnClick"/>
+                <MenuItem x:Name="FlickerMenu" ToggleType="CheckBox" Header="Disable Flicker" IsChecked="False" Click="Flicker_Click"/>
+            </MenuItem>
+            
         </Menu>
 
         <!-- NES-display -->
-        <local:NesBitmapControl x:Name="NesView" Grid.Row="1"></local:NesBitmapControl>
+        <local:NesBitmapControl x:Name="NesView" Focusable="True" Grid.Row="1"></local:NesBitmapControl>
                       
 
         <!-- Statusf�lt-->

@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Threading;
 using Avalonia.Input;
+using Avalonia.Media.Imaging;
 
 namespace pNesX
 {
@@ -63,11 +64,9 @@ namespace pNesX
             StateText.Text = "Selected State : null";
             FpsText.Text = "Emulator FPS:";
             FpsRedrawText.Text = "Blit FPS:";
-            
-            using (var stream = File.OpenRead("pNesX_title.bmp"))
-            {
-                    NesView.SetBitmapFromStream(stream);
-            }
+
+            using var stream = File.OpenRead("pNesX_title.bmp"); 
+            NesView.SetBitmapFromStream(stream);
 
         }
 
@@ -89,19 +88,19 @@ namespace pNesX
             if (topLevel == null)
                 return;
 
+            _lastFolder = await topLevel.StorageProvider
+                .TryGetFolderFromPathAsync(Environment.CurrentDirectory);
             var files = await topLevel.StorageProvider.OpenFilePickerAsync(
                 new FilePickerOpenOptions
                 {
                     Title = "Open NES ROM",
                     AllowMultiple = false,
                     SuggestedStartLocation = _lastFolder,
-                    FileTypeFilter = new[]
+                    FileTypeFilter = [ new FilePickerFileType("NES ROMs")
                     {
-                    new FilePickerFileType("NES ROMs")
-                    {
-                        Patterns = new[] { "*.nes", "*.zip" }
-                    }
-                }
+                        Patterns = [ "*.nes", "*.zip" ]
+                    }]
+      
                 });
 
             if (files.Count == 0)
@@ -148,6 +147,7 @@ namespace pNesX
             if (_nes.LoadRom(_rom))
                 StartEmulation();
         }
+
 
         private void Exit_Click(object? sender, RoutedEventArgs e)
         {
@@ -205,12 +205,12 @@ namespace pNesX
         {
             int frames = 0;
             long lastTime = _io.ElapsedTimeMS();
-            long spinTime = lastTime;
+
             while (_run)
             {
                 if (_io.FrameLimit)
                 {
-                    while (_audio.Count > _audio.SamplesPerFrame + 100 && _run)
+                    while (_audio.Count > _audio.SamplesPerFrame * 2 && _run)
                     {
                         // spin
 
@@ -256,11 +256,11 @@ namespace pNesX
 
             
 
-                var milisNow = _io.ElapsedTimeMicro();
-                if(milisNow - renderLimiter > 16667)
+                var millisNow = _io.ElapsedTimeMicro();
+                if(millisNow - renderLimiter > 16667)
                 {
                     //60 fps
-                    renderLimiter = milisNow;
+                    renderLimiter = millisNow;
                     lock (_frameLock)
                     {
                         frame = new uint[_frameBuffer.Length];
@@ -293,6 +293,36 @@ namespace pNesX
             }
         }
 
+        private void Interpolation_OnClick(object? sender, RoutedEventArgs e)
+        {
+            if(sender == null) return;
+            var tag = ((MenuItem)sender).Tag;
+
+            switch (tag)
+            {
+                case "None": NesView.InterpolationMode(BitmapInterpolationMode.None); break;
+                case "Low": NesView.InterpolationMode(BitmapInterpolationMode.LowQuality); break;
+                case "High": NesView.InterpolationMode(BitmapInterpolationMode.HighQuality); break;
+            }
+  
+        }
+
+        private void HideOverscan_OnClick(object? sender, RoutedEventArgs e)
+        {
+            _nes.HideOverscan = !_nes.HideOverscan;
+            HideOverscan.IsChecked = _nes.HideOverscan;
+        }
+        
+        private void Flicker_Click(object? sender, RoutedEventArgs e)
+        {
+            if (_rom == null || _nes == null) 
+                return;
+            lock (_frameLock)
+            {
+                _nes.DisableSpriteFlicker = !_nes.DisableSpriteFlicker;
+                FlickerMenu.IsChecked = _nes.DisableSpriteFlicker;
+            }
+        }
     }
 
 }

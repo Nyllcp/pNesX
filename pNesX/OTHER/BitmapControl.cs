@@ -30,6 +30,7 @@ namespace pNesX
                 );
                 
             };
+            RenderOptions.SetBitmapInterpolationMode(this,BitmapInterpolationMode.None);
         }
 
         public void SetBitmapFromStream(Stream stream)
@@ -37,7 +38,12 @@ namespace pNesX
             _bitmap = WriteableBitmap.Decode(stream);
             InvalidateVisual();
         }
-        
+
+        public void InterpolationMode(BitmapInterpolationMode interpolationMode)
+        {
+            RenderOptions.SetBitmapInterpolationMode(this, interpolationMode);
+            InvalidateVisual();
+        }
         public void UpdateFrame(uint[] frame)
         {
             if (frame.Length != Width * Height)
@@ -85,6 +91,7 @@ namespace pNesX
             var xoffset = (Bounds.Width - calcwidth) / 2;
             var yoffset = (Bounds.Height - calcheight) / 2;
             Rect rect = new Rect(xoffset, yoffset, calcwidth, calcheight);
+
             context.DrawImage(
                 _bitmap,
                 rect

@@ -5,7 +5,7 @@ namespace pNesX
     class Cartridge
     {
 
-        private Mapper _mapper;
+        private Mapper? _mapper;
         public bool Iflag { get { return _mapper.Iflag; } }
 
         public Cartridge() { }

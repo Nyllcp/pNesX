@@ -20,9 +20,11 @@ namespace pNesX
         const int nesHeight = 240;
         private const int spriteBGpriority = 0x80;
         private const int spriteZeroFlag = 0x40;
-
+        
         private byte[] oam = new byte[0x100];
-        private SpriteObject[] sOam = new SpriteObject[8];
+        
+        private SpriteObject[] sOam = new SpriteObject[64];
+
         private byte[] scanlineBuffer = new byte[256];
         private byte[] spriteScanlineBuffer = new byte[256];
         private uint[] _frame = new uint[nesWidth * nesHeight];
@@ -60,9 +62,15 @@ namespace pNesX
         private bool addressLatch = false;
         private bool oddFrame = false;
         private bool frameReady = false;
+        private bool disableFlicker = false;
+        private bool hideOverscan = true;
+        
         public bool FrameReady { get { bool value = frameReady; frameReady = false; return value; } }
 
         public uint[] Frame { get { return _frame; } }
+
+        public bool DisableFlicker { get { bool value = disableFlicker; return value; } set {  disableFlicker = value; } }
+        public bool HideOverscan { get { bool value = hideOverscan; return value; } set {  hideOverscan = value; } }
 
         public Ppu(Cartridge cart, Core core)
         {
@@ -88,6 +96,10 @@ namespace pNesX
                     for (int i = 0; i < scanlineBuffer.Length; i++)
                     {
                         _frame[i + (currentScanline * nesWidth)] = PalleteRGBlookup[paletteRam[scanlineBuffer[i]]];
+                        if (hideOverscan && currentScanline < 8 || currentScanline > 231)
+                        {
+                            _frame[i + (currentScanline * nesWidth)] = 0x00000000;
+                        }
                     }
                 }
                 currentScanline++;
@@ -107,7 +119,7 @@ namespace pNesX
             
             if(currentDot == 65)SpriteEvaluation();
             if (currentDot == 321) SpriteRenderer();
-
+   
             if (currentScanline == 241 && currentDot == 1)
             {
                 inVblank = true;
@@ -149,12 +161,14 @@ namespace pNesX
         {
             if (spritesEnabled && currentScanline <= 239)
             {
+                
                 for (int i = 0; i < sOam.Length; i++)
                 {
                     sOam[i].ClearSprite();
                 }
                 int numberOfSprites = 0;
-                for (int i = oamAddr; i < oam.Length; i += 4)
+                int spritesToEvaluate = disableFlicker ? sOam.Length : 8;
+                for (int i = 0; i < oam.Length; i += 4)
                 {
                     byte ypos = oam[i];
                     if (ypos > 0xEF) continue;
@@ -162,22 +176,20 @@ namespace pNesX
                     {
                         if (i == 0 && !sprite0Hit)
                         {
-                            sOam[i].isSprite0 = true;
+                            sOam[numberOfSprites].isSprite0 = true;
                         }
-                        if (numberOfSprites < 8)
+                        if (numberOfSprites < spritesToEvaluate)
                         {
                             for (int j = 0; j < 4; j++)
                             {
                                 sOam[numberOfSprites].SpriteData[j] = oam[i + j];
                             }
                         }
-                        else
-                        {
-                            spriteOverflow = true;
-                        }
                         numberOfSprites++;
                     }
                 }
+
+                if (numberOfSprites > 7) spriteOverflow = true;
             }
         }
 
@@ -206,7 +218,6 @@ namespace pNesX
             }
         }
 
-
         private void FetchTimer()
         {
             if (currentScanline <= 239 && currentDot % 8 == 0 || currentScanline == 261 && currentDot % 8 == 0)
@@ -218,14 +229,23 @@ namespace pNesX
                     {
                         FetchNewTile();
                     }
-                    else if (currentDot >= 264 && currentDot <= 320)
+                    else if (currentDot >= 264 && currentDot <= 320 && !disableFlicker)
                     {
+                        
                         int index = (currentDot - 264) / 8;
                         sOam[index].LoadTiledata(currentScanline, spriteTableAddress, largeSprites);
 
                     }
                     else if (currentDot == 256)
                     {
+                        if (disableFlicker)
+                        {
+                            for (int i = 0; i < sOam.Length; i++)
+                            {
+                                sOam[i].LoadTiledata(currentScanline, spriteTableAddress, largeSprites);
+                            }
+                        }
+                      
                         IncrementY();
                         ppuAddress &= ~0x41F;
                         ppuAddress |= tempPpuAddress & 0x41F;
@@ -244,9 +264,9 @@ namespace pNesX
 
         private void BgRenderer()
         {
+            byte pixel = 0;
             if (currentDot < 256 && currentScanline <= 239 && bgEnabled)
             {
-                byte pixel = 0;
                 int pixelplace = (currentDot % 8) + fineX;
                 pixel |= (byte)((tileData0 >> (15 - pixelplace)) & 0x1);
                 pixel |= (byte)(((tileData1 >> (15 - pixelplace)) & 0x1) << 1);
@@ -302,26 +322,57 @@ namespace pNesX
                 }
                 
 
+            }
 
-                if ((pixel & 3) == 0) pixel = 0;
+            if (currentDot < 256 && currentScanline <= 239 && (bgEnabled || spritesEnabled))
+            {
+                byte spritePixel = spriteScanlineBuffer[currentDot];
+                byte bgPixel = pixel;
                 if(!showLeftBg && currentDot < 8)
                 {
-                    pixel = 0;
+                    bgPixel = 0;
                 }
-                byte spritePixel = spriteScanlineBuffer[currentDot];
-                if (pixel == 0) pixel = spritePixel;
-                if(!sprite0Hit && (spritePixel & spriteZeroFlag) != 0)
+                if (!showLeftSprite && currentDot < 8)
                 {
-                    if (pixel != 0 && (spritePixel & 0x3) != 0 ) sprite0Hit = true;
+                    spritePixel = 0; 
                 }
-                if (pixel != 0 && (spritePixel & 0x3) != 0 && (spritePixel & spriteBGpriority) == 0) pixel = spritePixel;
+                if ((bgPixel & 3) == 0)
+                {
+                    pixel = spritePixel;
+                }
+                else if ((spritePixel & 3) == 0)
+                {
+                    pixel = bgPixel;
+                }
+                else
+                {
+                    if ((spritePixel & spriteBGpriority) != 0)
+                        pixel = bgPixel; 
+                    else
+                        pixel = spritePixel; 
+                }
+                if (!sprite0Hit &&
+                    bgEnabled &&
+                    spritesEnabled &&
+                    (spritePixel & spriteZeroFlag) != 0 &&
+                    (spritePixel & 3) != 0 &&
+                    (bgPixel & 3) != 0 &&
+                    (showLeftBg || currentDot >= 8) &&
+                    (showLeftSprite || currentDot >= 8))
+                {
+                    sprite0Hit = true;
+                }
+                
+                
+            }
+
+            if (currentDot < 256 && currentScanline <= 239)
+            {
                 pixel &= 0x1f;
                 scanlineBuffer[currentDot] = pixel;
             }
-            if (currentDot < 256 && currentScanline <= 239 && !bgEnabled)
-            {
-                scanlineBuffer[currentDot] = 0;
-            }
+            
+            
         }
 
 
